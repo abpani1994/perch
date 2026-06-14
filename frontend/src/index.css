@@ -1,0 +1,301 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;510;590;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+  :root {
+    /* ── Brand / accent (hex baseline kept for Safari < 15.4 / older Chromium) */
+    --brand:        #ef4444;
+    --brand-600:    #dc2626;
+    --accent:       #475569;
+    --accent-600:   #334155;
+    --brand-glow:   #ef444455;
+    --accent-glow:  #47556940;
+
+    /* ── Surfaces / text — light defaults */
+    --surface:      oklch(1 0 0);
+    --surface-2:    oklch(0.97 0.005 264);
+    --text-1:       oklch(0.22 0.01 264);
+    --text-2:       oklch(0.50 0.01 264);
+
+    /* ── Hairline divider — perceptually-uniform of currentColor.
+       Use as: border-color: var(--hairline); */
+    --hairline:     color-mix(in oklch, currentColor 14%, transparent);
+    --hairline-strong: color-mix(in oklch, currentColor 22%, transparent);
+
+    /* ── Curated easing vocabulary. Reference these everywhere — never
+       hand-roll cubic-bezier in JSX. */
+    --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);   /* expo-out — heroes, modals, big reveals */
+    --ease-hover:    cubic-bezier(0.22, 1, 0.36, 1);  /* quart-out — micro-interactions */
+    --ease-morph:    cubic-bezier(0.65, 0, 0.35, 1);  /* in-out-cubic — FLIP, shared elements */
+    --ease-exit:     cubic-bezier(0.7, 0, 0.84, 0);   /* quart-in — exits only */
+
+    /* ── Standard durations — pair with the easings above. */
+    --dur-fast:      180ms;
+    --dur-base:      320ms;
+    --dur-slow:      560ms;
+    --dur-reveal:    900ms;
+
+    /* ── Texture knobs */
+    --grain-opacity: 0.025;
+  }
+
+  /* OKLCH-uniform tints when supported (Safari 15.4+ / Chrome 111+ / FF 113+).
+     For older browsers the hex --brand / --accent above remain authoritative
+     and color-mix() falls back via @supports. */
+  @supports (color: oklch(50% 0 0)) {
+    :root {
+      --brand-soft:   color-mix(in oklch, var(--brand) 18%, transparent);
+      --brand-tint:   color-mix(in oklch, var(--brand) 14%, var(--surface));
+      --accent-soft:  color-mix(in oklch, var(--accent) 14%, transparent);
+      --accent-tint:  color-mix(in oklch, var(--accent) 12%, var(--surface));
+    }
+  }
+  @supports not (color: oklch(50% 0 0)) {
+    :root {
+      --brand-soft:   #ef444422;
+      --brand-tint:   #fdecec;
+      --accent-soft:  #47556918;
+      --accent-tint:  #eef1f5;
+    }
+  }
+
+  html {
+    scroll-behavior: smooth;
+    /* Variable font opsz: small text gets heavier strokes, headlines get
+       elegant proportions. Costs nothing, feels expensive. */
+    font-optical-sizing: auto;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
+    color-scheme: light;
+  }
+  body {
+    /* Kerning + ligatures default-on. */
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  /* Kill widows on headlines, balance two-line wraps. text-wrap support: ~95%. */
+  h1, h2, .display { text-wrap: balance; }
+  p, li, blockquote, .prose { text-wrap: pretty; }
+
+  ::selection { background-color: #ef444430; color: inherit; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .perspective-card { perspective: 1200px; transform-style: preserve-3d; }
+  .tilt-on-hover { transition: transform 0.4s cubic-bezier(0.21, 1.02, 0.73, 0.99); transform-style: preserve-3d; }
+  .tilt-on-hover:hover { transform: rotateX(4deg) rotateY(-6deg) translateZ(8px); }
+
+  /* Cursor-aware soft brand-glow that follows the pointer.
+     Set --mx and --my (in px) on document.documentElement via a mousemove handler:
+       window.addEventListener("pointermove", e => {
+         document.documentElement.style.setProperty("--mx", e.clientX + "px");
+         document.documentElement.style.setProperty("--my", e.clientY + "px");
+       });
+  */
+  .cursor-glow { position: relative; overflow: hidden; }
+  .cursor-glow::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(circle 320px at var(--mx, 50%) var(--my, 50%), var(--brand-glow), transparent 70%);
+    transition: background 0.18s ease;
+  }
+  .cursor-glow > * { position: relative; z-index: 1; }
+
+  /* Magnetic button — JS adds inline transform on pointermove within bounds, removes on leave.
+     The transform is applied directly via style.transform — no CSS needed beyond the smooth transition.
+     Pattern:
+       el.addEventListener("pointermove", e => {
+         const r = el.getBoundingClientRect();
+         const x = (e.clientX - r.left - r.width/2) * 0.25;
+         const y = (e.clientY - r.top - r.height/2) * 0.35;
+         el.style.transform = "translate(" + x + "px," + y + "px)";
+       });
+       el.addEventListener("pointerleave", () => el.style.transform = "");
+  */
+  .magnetic { transition: transform 0.25s cubic-bezier(0.21, 1.02, 0.73, 0.99); will-change: transform; }
+
+  /* Counter element. Pair with an IntersectionObserver that, on visible, ticks
+     from 0 to data-target over ~1.4s with easeOutQuart, writing into textContent. */
+  .count-up { font-variant-numeric: tabular-nums; }
+
+  /* Pulsing brand glow ring — for "live now" badges, "shipping" tags, primary CTAs. */
+  .pulse-glow { position: relative; }
+  .pulse-glow::after {
+    content: ""; position: absolute; inset: -2px; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 0 0 var(--brand-glow);
+    animation: pulseGlow 2.2s ease-out infinite;
+  }
+
+  .animate-aurora { animation: aurora 18s ease-in-out infinite alternate; }
+  .animate-shimmer { animation: shimmer 1.6s ease-in-out infinite; }
+  .animate-float { animation: float 6s ease-in-out infinite; }
+  .animate-glow { animation: glow 2.4s ease-in-out infinite; }
+  .animate-spin-slow { animation: spin 14s linear infinite; }
+  .animate-glitch { animation: glitch 2.8s steps(2, end) infinite; }
+  .animate-marquee { animation: marquee 22s linear infinite; }
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+
+  /* Hairline border utilities — use these in place of border-zinc-200 / etc.
+     Color comes from currentColor so they adapt to dark/light contexts. */
+  .hairline       { border: 1px solid var(--hairline); }
+  .hairline-t     { border-top: 1px solid var(--hairline); }
+  .hairline-b     { border-bottom: 1px solid var(--hairline); }
+  .hairline-strong { border: 1px solid var(--hairline-strong); }
+
+  /* Variable-font weight transition — apply to interactive type. */
+  .type-shift { transition: font-variation-settings 400ms var(--ease-hover); }
+  .type-shift:hover { font-variation-settings: "wght" 560; }
+
+  /* 900ms one-shot diagonal shine. Used by ScrollProgressBar and any
+     "this just finished loading" affordance. */
+  .shine-sweep { position: relative; overflow: hidden; }
+  .shine-sweep::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(120deg, transparent 30%, rgba(0,0,0,0.06) 50%, transparent 70%);
+    transform: translateX(-100%);
+    animation: shineSweep 900ms var(--ease-entrance) forwards;
+  }
+}
+
+@keyframes pulseGlow {
+  0%   { box-shadow: 0 0 0 0 var(--brand-glow); }
+  70%  { box-shadow: 0 0 0 18px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+@keyframes aurora {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(2%, -3%, 0) scale(1.05); }
+  100% { transform: translate3d(-2%, 2%, 0) scale(1); }
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes float   { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes glow    { 0%, 100% { box-shadow: 0 0 0 0 var(--brand-glow); } 50% { box-shadow: 0 0 0 14px transparent; } }
+@keyframes spin    { to { transform: rotate(360deg); } }
+@keyframes glitch  {
+  0%, 100% { transform: translate(0); text-shadow: 0 0 0 transparent; }
+  20% { transform: translate(-1px, 1px); text-shadow: 1.5px 0 0 #94a3b8, -1.5px 0 0 #ef4444; }
+  40% { transform: translate(1px, -1px); text-shadow: -1.5px 0 0 #94a3b8, 1.5px 0 0 #ef4444; }
+  60% { transform: translate(0, 1px); text-shadow: 1.5px 0 0 #94a3b8, -1.5px 0 0 #ef4444; }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes scanlines { 0% { background-position: 0 0; } 100% { background-position: 0 6px; } }
+@keyframes morph {
+  0%, 100% { border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%; }
+  50%      { border-radius: 70% 30% 46% 54% / 30% 60% 40% 70%; }
+}
+@keyframes holo {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes shineSweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+
+@layer base {
+  :root {
+    --surface: #ffffff;
+    --surface-2: #f5f6f8;
+    --text-1: #1c1f26;
+    --text-2: #5f6470;
+    --hairline: #e5e7eb;
+    --radius: 0.625rem;
+    --cta: #ef4444;
+  }
+  body {
+    background: #f7f8fa;
+    color: #1c1f26;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, .display {
+    font-family: "Inter", "Inter", system-ui, sans-serif;
+    font-weight: 700; letter-spacing: -0.02em; color: #1c1f26;
+  }
+}
+
+@layer components {
+  .aurora-bg { @apply relative isolate; background: #f7f8fa; }
+
+  .card, .glass-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 4px 16px rgba(16,24,40,0.06);
+    transition: border-color var(--dur-base) var(--ease-hover), box-shadow var(--dur-base) var(--ease-hover), transform var(--dur-base) var(--ease-hover);
+  }
+  .card:hover, .glass-card:hover { border-color: var(--hairline-strong); box-shadow: 0 1px 2px rgba(16,24,40,0.05), 0 8px 28px rgba(16,24,40,0.10); }
+
+  .glass-nav {
+    @apply sticky top-0 z-40 backdrop-blur;
+    background: color-mix(in srgb, #ffffff 80%, transparent);
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .btn-primary, .btn-glow {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 font-medium text-white transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+    background: #ef4444; border-radius: calc(var(--radius) - 0.15rem);
+  }
+  .btn-primary:hover, .btn-glow:hover { background: #dc2626; }
+  .btn-primary:active, .btn-glow:active { transform: translateY(0.5px); }
+
+  .btn-secondary, .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 font-medium transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+    background: #ffffff; color: #1c1f26; border: 1px solid #e5e7eb; border-radius: calc(var(--radius) - 0.15rem);
+  }
+  .btn-secondary:hover, .btn-ghost:hover { background: #f5f6f8; }
+
+  .btn-cta {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 font-semibold text-white transition-all duration-150;
+    background: #ef4444; border-radius: calc(var(--radius) - 0.15rem);
+  }
+
+  .input {
+    @apply w-full px-4 py-2.5 transition-all duration-150;
+    background: #ffffff; color: #1c1f26; border: 1px solid #e5e7eb; border-radius: calc(var(--radius) - 0.15rem);
+  }
+  .input::placeholder { color: #9ca3af; }
+  .input:focus { @apply outline-none; border-color: #ef4444; box-shadow: 0 0 0 3px var(--brand-soft); }
+
+  .pill {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+    background: #f5f6f8; color: #5f6470; border: 1px solid #e5e7eb;
+  }
+
+  .text-gradient {
+    background: linear-gradient(120deg, #ef4444 0%, #94a3b8 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  @supports not ((-webkit-background-clip: text) or (background-clip: text)) { .text-gradient { color: #ef4444; } }
+
+
+.shimmer {
+  background: linear-gradient(90deg, rgba(16,24,40,0.04) 0%, rgba(16,24,40,0.09) 50%, rgba(16,24,40,0.04) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+.noise { position: relative; }
+.noise::after {
+  content: ""; position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: var(--grain-opacity); pointer-events: none; mix-blend-mode: multiply; z-index: 1;
+}
+
+}

@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Plan {
+  free
+  pro
+}
+
+enum LaptopPolicy {
+  welcome
+  limited
+  banned
+}
+
+enum NoiseTier {
+  silent
+  ambient
+  loud
+}
+
+enum Crowding {
+  quiet
+  moderate
+  packed
+}
+
+model Campus {
+  id     String  @id @default(uuid())
+  name   String
+  slug   String  @unique
+  lat    Float
+  lng    Float
+  venues Venue[]
+  users  User[]
+}
+
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  passwordHash  String
+  name          String
+  campusId      String?
+  campus        Campus?       @relation(fields: [campusId], references: [id])
+  plan          Plan          @default(free)
+  reducedMotion Boolean       @default(false)
+  notifyEnabled Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  checkIns      CheckIn[]
+  favorites     Favorite[]
+  sessionPrefs  SessionPref[]
+  noiseReports  NoiseReport[]
+}
+
+model Venue {
+  id               String        @id @default(uuid())
+  campusId         String
+  campus           Campus        @relation(fields: [campusId], references: [id])
+  name             String
+  address          String
+  lat              Float
+  lng              Float
+  laptopPolicy     LaptopPolicy  @default(welcome)
+  timeLimitMinutes Int?
+  outletCount      Int           @default(0)
+  lastVerifiedAt   DateTime?
+  baseNoise        Json
+  createdAt        DateTime      @default(now())
+  checkIns         CheckIn[]
+  noiseReports     NoiseReport[]
+  favorites        Favorite[]
+
+  @@index([campusId])
+}
+
+model CheckIn {
+  id          String    @id @default(uuid())
+  venueId     String
+  venue       Venue     @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outletsFree Int
+  noiseTier   NoiseTier
+  laptopOk    Boolean   @default(true)
+  crowding    Crowding  @default(moderate)
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+
+  @@index([venueId, expiresAt])
+}
+
+model NoiseReport {
+  id        String    @id @default(uuid())
+  venueId   String
+  venue     Venue     @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hourOfDay Int
+  noiseTier NoiseTier
+  createdAt DateTime  @default(now())
+
+  @@index([venueId, hourOfDay])
+}
+
+model Favorite {
+  id      String  @id @default(uuid())
+  userId  String
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  venueId String
+  venue   Venue   @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  notify  Boolean @default(false)
+
+  @@unique([userId, venueId])
+}
+
+model SessionPref {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label          String
+  hour           Int
+  minNoise       NoiseTier @default(ambient)
+  minOutlets     Int       @default(1)
+  laptopRequired Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+}

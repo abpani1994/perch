@@ -1,0 +1,253 @@
+/* Reveal utility with built-in failsafe — content can never stay hidden.
+   Adds opacity+translate that resolves on .in-view, AND a keyframe failsafe
+   that forces visibility after 1.4s even if the observer never fires. */
+.reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 480ms var(--ease-entrance), transform 480ms var(--ease-entrance);
+  animation: reveal-failsafe 0.01ms linear 1.4s forwards;
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+@keyframes reveal-failsafe {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+}
+
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: reveal-failsafe 0.01ms linear 1.4s forwards;
+}
+.reveal-stagger.in-view > * {
+  animation: reveal-rise 460ms var(--ease-entrance) forwards;
+}
+.reveal-stagger.in-view > *:nth-child(1) { animation-delay: 0ms; }
+.reveal-stagger.in-view > *:nth-child(2) { animation-delay: 60ms; }
+.reveal-stagger.in-view > *:nth-child(3) { animation-delay: 120ms; }
+.reveal-stagger.in-view > *:nth-child(4) { animation-delay: 180ms; }
+@keyframes reveal-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-stagger > * { opacity: 1 !important; transform: none !important; animation: none !important; }
+}
+
+/* hover-lift utility */
+.hover-lift {
+  transition: transform var(--dur-base) var(--ease-hover), box-shadow var(--dur-base) var(--ease-hover);
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+}
+
+/* hero aurora spill — single rationed brand wash, low opacity */
+.aurora-spill {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.08;
+  background: radial-gradient(circle, var(--brand) 0%, transparent 70%);
+}
+
+/* mono labels */
+.mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+/* live dot pulse */
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #dc2626;
+  box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5);
+  animation: live-pulse 2s ease-out infinite;
+}
+@keyframes live-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45); }
+  70% { box-shadow: 0 0 0 7px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; }
+}
+
+/* ── "See cafés near my quad" — signature hero CTA ── */
+.quad-cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.01em;
+  border: none;
+  border-radius: 0.85rem;
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 55%, #b91c1c 100%);
+  background-size: 180% 180%;
+  box-shadow:
+    0 1px 1px rgba(185, 28, 28, 0.25),
+    0 8px 22px -8px rgba(239, 68, 68, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition:
+    transform var(--dur-fast) var(--ease-hover),
+    box-shadow var(--dur-base) var(--ease-hover),
+    background-position var(--dur-slow) var(--ease-hover);
+}
+.quad-cta:hover {
+  transform: translateY(-2px);
+  background-position: 100% 50%;
+  box-shadow:
+    0 1px 1px rgba(185, 28, 28, 0.3),
+    0 16px 34px -10px rgba(239, 68, 68, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.quad-cta:active { transform: translateY(0); }
+
+/* diagonal shine sweep on hover */
+.quad-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.35) 50%, transparent 70%);
+  transform: translateX(-130%);
+  transition: transform 0.7s var(--ease-entrance);
+}
+.quad-cta:hover::before { transform: translateX(130%); }
+
+.quad-cta > * { position: relative; z-index: 1; }
+
+/* the map pin icon with a live "ping" ring */
+.quad-cta__icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.quad-cta__ping {
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  opacity: 0;
+  animation: quad-ping 2.4s ease-out infinite;
+}
+@keyframes quad-ping {
+  0% { transform: scale(0.6); opacity: 0.7; }
+  70% { transform: scale(1.6); opacity: 0; }
+  100% { opacity: 0; }
+}
+
+.quad-cta__arrow {
+  transition: transform var(--dur-base) var(--ease-hover);
+}
+.quad-cta:hover .quad-cta__arrow { transform: translateX(3px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .quad-cta,
+  .quad-cta::before,
+  .quad-cta__ping,
+  .quad-cta__arrow {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ── "Create an account" — monochrome stylish CTA (grey · black · white) ── */
+.mono-cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.85rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.85rem;
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(135deg, #2a2d34 0%, #16181d 55%, #050608 100%);
+  background-size: 180% 180%;
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.4),
+    0 8px 22px -10px rgba(15, 18, 24, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition:
+    transform var(--dur-fast) var(--ease-hover),
+    box-shadow var(--dur-base) var(--ease-hover),
+    background-position var(--dur-slow) var(--ease-hover);
+}
+.mono-cta:hover {
+  transform: translateY(-2px);
+  background-position: 100% 50%;
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.45),
+    0 16px 34px -12px rgba(15, 18, 24, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.mono-cta:active { transform: translateY(0); }
+
+/* sweeping silver shine on hover */
+.mono-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(120deg, transparent 32%, rgba(255, 255, 255, 0.22) 50%, transparent 68%);
+  transform: translateX(-130%);
+  transition: transform 0.7s var(--ease-entrance);
+}
+.mono-cta:hover::before { transform: translateX(130%); }
+
+.mono-cta > * { position: relative; z-index: 1; }
+
+.mono-cta__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #d4d6db;
+  transition: color var(--dur-base) var(--ease-hover);
+}
+.mono-cta:hover .mono-cta__icon { color: #ffffff; }
+
+.mono-cta__arrow {
+  transition: transform var(--dur-base) var(--ease-hover);
+  color: #b9bcc4;
+}
+.mono-cta:hover .mono-cta__arrow { transform: translateX(3px); color: #ffffff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mono-cta,
+  .mono-cta::before,
+  .mono-cta__arrow {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* app sidebar active */
+.nav-item {
+  transition: background var(--dur-fast) var(--ease-hover), color var(--dur-fast) var(--ease-hover);
+}
