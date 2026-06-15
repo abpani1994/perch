@@ -74,10 +74,10 @@ export default function Landing() {
               Stop gambling twenty minutes on a dead commute. Perch reads outlet density, noise by hour, and the
               laptop policy of every café near your campus &mdash; verified by the person who just sat down.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-8 flex flex-nowrap items-center gap-3">
               <button
                 onClick={() => navigate("/map")}
-                className="quad-cta group"
+                className="quad-cta group shrink-0"
                 aria-label="See cafés near my quad"
               >
                 <span className="quad-cta__icon">
@@ -91,7 +91,7 @@ export default function Landing() {
                   className="quad-cta__arrow"
                 />
               </button>
-              <Link to="/register" className="mono-cta" aria-label="Create an account">
+              <Link to="/register" className="mono-cta shrink-0" aria-label="Create an account">
                 <span className="mono-cta__icon">
                   <Icon icon="ph:user-plus" width="18" />
                 </span>

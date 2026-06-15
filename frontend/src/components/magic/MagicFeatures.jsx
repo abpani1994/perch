@@ -292,7 +292,7 @@ function BentoItem(props) {
             alt={feature.desc}
             loading="lazy"
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            src={`https://picsum.photos/seed/${feature.seed}/1200/900`}
+            src="https://images.pexels.com/photos/13264817/pexels-photo-13264817.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
           />
         </div>
       )}
